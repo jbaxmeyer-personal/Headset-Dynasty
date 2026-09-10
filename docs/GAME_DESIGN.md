@@ -2,7 +2,7 @@
 
 **Status:** Living draft. This document reflects everything decided in planning conversations so far. Sections marked **TBD** are open and will be filled in as we keep talking. Nothing here is final until we've validated it feels good to build and play — but this is our source of truth for what we're building.
 
-**Last updated:** 2026-09-09
+**Last updated:** 2026-09-10
 
 ---
 
@@ -26,9 +26,9 @@ Core promise to the player: you are a football coach with a specific job (positi
 - **Premium, one-time purchase.** No ads, no IAP, no ongoing monetization systems to build.
 - **Free tier exists as a trial/hook**, not a separate monetization strategy:
   - Free: choose **any school** and **any coaching role** (including Head Coach) from day one — no need to climb the ladder to sample the top job.
-  - Free is capped at a small number of total seasons (**2 or 3 — TBD**, needs to be picked and playtested).
+  - Free is capped at **2 total seasons**.
   - Paid: unlocks unlimited seasons.
-- Open question: exact price point. **TBD.**
+- Exact price point: deliberately deferred — decide closer to launch once the game's actual depth/feel is known, rather than guessing this early.
 
 ## 4. Core Gameplay Loop & Coaching Roles
 
@@ -118,11 +118,57 @@ The following affect sim outcomes:
 
 **Realistic, play-level risk model**: every play carries injury risk (weighted by play type/position), with severity/duration ranging from "shake it off" to season-ending, modified by a player durability attribute.
 
-### 5.7 Positions & attributes
+### 5.7 Attribute scale & display
 
-**Full realistic position breakdown** (all ~20 real CFB positions: QB, RB, WR, TE, LT/LG/C/RG/RT, EDGE/DT, LB, CB/S, K/P/LS, etc.), each with a meaningful set of position-relevant attributes.
+Every attribute is a **hidden 0-100 number** under the hood, displayed to the player as a **letter grade** (A+ down to F, same shape as recruiting grades) so it reads like a scouting report, not a spreadsheet. Scouting investment (§6.1) determines what's actually visible:
+- Under-scouted recruit → a range shown (e.g. "B- to A-")
+- Fully scouted → the exact letter grade
 
-**The exact attribute list per position, and precisely how those attributes feed into the play-resolution math, is intentionally left open — this is being co-designed with the user as its own dedicated design pass, not dictated.** See §13.
+### 5.8 Position groups (not rigid per-position schemas)
+
+Rather than ~20 separate position-specific attribute schemas, players are modeled in **four broad groups**, each sharing one attribute set. This mirrors real recruiting/coaching practice (ATH designations, position "projections," in-career position changes) and deliberately **supports repositioning a player** during their career — something a rigid per-position schema couldn't do cleanly.
+
+| Group | Covers | Group-specific attributes |
+|---|---|---|
+| **Passer** | QB | Accuracy Short, Accuracy Medium, Accuracy Deep |
+| **Specialist** | K, P | Power, Accuracy, Clutch |
+| **Line** | OL, DL | Run Block, Pass Block, Pass Rush, Run Defense, Tackling |
+| **Athlete** | RB, WR, TE, LB, CB, S | Elusiveness, Break Tackle, Ball Security, Receiving, Route Running, Catching, Catch-in-Traffic, Release, Run Block, Run Defense, Man Coverage, Zone Coverage, Press, Ball Skills, Tackling, Pass Rush |
+
+Long snapper is **not modeled as a distinct role/attribute** — snapping competence is abstracted away rather than tracked.
+
+Every player also carries **7 universal attributes**, regardless of group: **Speed, Strength, Agility, Awareness, Durability** (injury risk modifier), **Stamina** (in-game fatigue), and **Potential** (hidden ceiling, never shown directly — only inferred from development rate).
+
+Universal attributes deliberately absorb several traits that would otherwise be separate (per direct design decisions):
+- QB: no separate Arm Strength (covered by Strength), no Play-Action/Pocket Presence/Decision Making (covered by Awareness), no separate Scramble/Mobility (covered by Speed + Agility).
+- RB: no separate Vision (covered by Awareness).
+- WR/TE: no separate YAC (covered by Speed + Agility).
+
+**A player's full group-wide attribute set exists at all times**, but only the subset relevant to their **currently assigned position** is treated as "active" for play math and shown prominently in the UI — the rest are secondary/background (e.g., a starting WR's Man Coverage and Pass Rush grades exist but sit low and out of the spotlight until/unless he's ever moved to defense). **This "active attributes" presentation needs to be validated with an actual UI mockup before being treated as finalized** — noted as an open item, see §13.
+
+### 5.9 Positional Familiarity
+
+Because Athlete- and Line-group attributes are fully portable across the real positions within their group, an unrestricted "move anyone anywhere instantly" mechanic would be unrealistic and exploitable (no one would ever value drafting a true CB if you could just freely reslot your best raw athlete). To prevent that:
+
+- Every player has a **Familiarity** rating (0-100) **per real position** within their group — starts high at their recruited/assigned position, starts low or at zero for any position they've never played.
+- Low Familiarity **suppresses effective attribute values in play math** (not the underlying grades) — e.g., a Safety just moved to Linebacker plays like a worse linebacker than his raw numbers alone would suggest, until Familiarity rises.
+- Familiarity **climbs through playing time at the new position**, and can be **accelerated by spending development points there** — modeling the real "he needs more reps at the new spot" reality of a position change.
+
+This makes repositioning a real, weighty coaching decision (worth it for a great athlete stuck behind a starter, or to fix a poor fit) rather than a free respec.
+
+### 5.10 Physical profile (height & weight)
+
+Players have **realistic height and weight**, generated per their actual real-world position projection (e.g., a projected Linebacker generates in realistic LB size ranges, distinct from a projected Cornerback) even though both are in the shared Athlete group underneath.
+
+Height/weight are **not just flavor** — they matter in two ways:
+1. **Generation-time correlation**: body type realistically constrains which attributes a player tends to roll (a 340 lb lineman is very unlikely to also roll elite Speed).
+2. **Situational play math**: size acts as a targeted modifier in the specific real-football moments where it matters most — contested catches/jump balls (favors height), goal-line/short-yardage power (favors mass), trench push (favors weight/strength combined) — rather than being woven into every formula.
+
+**Weight can change over a career** through development investment (a strength-and-conditioning track, tied to development points) — modeling real freshman weight-room gains, a coach intentionally bulking up a lineman, or slimming down a player as part of a position conversion (tying directly into §5.9 Familiarity). Height is fixed.
+
+### 5.11 Recruiting position tags
+
+Despite the shared-attribute-group model underneath, recruits and players still carry a **projected/assigned position tag** (e.g., "CB," not just "Athlete") for recruiting-board organization, depth-chart purposes, and to drive realistic height/weight generation (§5.10). The group model is an internal data/flexibility architecture — it does not remove the concept of "what position is this guy" from the player-facing experience.
 
 ## 6. Recruiting
 
@@ -157,6 +203,7 @@ Recruiting (and the whole simulation) must work identically whether running on t
   - A **small, steady drip** during the season.
   - A **large bump** in the offseason.
 - The **position coach decides how to spend** those development points on their players (which attributes to improve). This is the actively-managed part of player development — you don't run practices, but you do direct growth.
+- Development points can also be spent on **Familiarity at a new position** (§5.9) and on a player's **weight** via a strength-and-conditioning track (§5.10) — covering position conversions and physical development, not just raw skill attributes.
 
 ## 8. World & Data
 
@@ -223,10 +270,10 @@ Target: a typical week (recruiting actions + game sim + reports) should be playa
 
 These are known-open items, not forgotten — to be resolved in future planning sessions:
 
-- [ ] Exact free-tier season cap: 2 or 3 seasons?
-- [ ] Price point for the one-time purchase.
-- [ ] **Full position/attribute list and the play-outcome formula** — explicitly flagged by the user as a collaborative design pass, not something to be decided unilaterally.
+- [ ] Price point for the one-time purchase (deliberately deferred to closer to launch).
+- [ ] **"Active attributes" UI presentation** (§5.8) needs an actual mockup/prototype before being treated as validated — user explicitly wants to see it in practice, not just approve it in the abstract.
 - [ ] Exact contents of the shared coach skill tree beyond scouting (recruiting pitch, development, play-calling/scheme mastery, program management, etc. were floated as categories but not finalized).
+- [ ] Exact numeric shape of the situational size modifiers (§5.10) — e.g. how much a height advantage should shift a contested-catch probability — needs real formula work, not just the qualitative direction agreed so far.
 - [ ] Findings from the Cricket Manager architecture review (in progress — see §14).
 - [ ] Findings from the Dynasty Tracker records/stats review (in progress — see §14).
 - [ ] Detailed screen-by-screen UI/UX design (only the high-level visual style — "clean modern sports app" — has been set).
