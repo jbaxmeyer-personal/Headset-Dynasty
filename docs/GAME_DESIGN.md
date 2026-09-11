@@ -2,7 +2,7 @@
 
 **Status:** Living draft. This document reflects everything decided in planning conversations so far. Sections marked **TBD** are open and will be filled in as we keep talking. Nothing here is final until we've validated it feels good to build and play — but this is our source of truth for what we're building.
 
-**Last updated:** 2026-09-10
+**Last updated:** 2026-09-11
 
 ---
 
@@ -20,6 +20,8 @@ Core promise to the player: you are a football coach with a specific job (positi
 - **Auth:** Social login only — Google and Apple. No email/password.
 - **Future port:** React Native, targeting iOS first, Android after. The sim engine and Firebase data layer should require no rewrite for this; only the presentation layer changes.
 - **Data schema:** Teams, conferences, players, coaches, and recruits are modeled as clean, documented data structures (see §8) from day one, because the custom-DB import feature depends on the "default" fictional world and any "custom" imported world being loadable by the exact same engine.
+- **Architectural rule, learned the hard way from Cricket Manager** (see §14): the "pure, data-in/data-out engine, no UI coupling" discipline must apply to **the entire simulation layer** — recruiting, player/coach development, the coaching AI, and the program economy — not just play resolution. Cricket Manager's match engine was cleanly isolated, but its career/season simulation was fused into one giant autoloaded singleton that the UI mutated directly in hundreds of places, which is exactly what made it hard to build and would have blocked a second UI. Every system in Headset Dynasty's engine should be reachable only through plain functions taking/returning data, never through a UI screen reaching into shared mutable state.
+- **Display vs. simulation values must stay separate**: attributes that drive the sim (hidden 0-100 numbers, §5.7) must never be replaced in formulas by whatever's shown to the player (letter grades, or any future composite "Overall" rating) — the display value is derived *from* the sim value, one direction only, never the reverse. This mirrors a rule Cricket Manager enforced explicitly (and a comment in its code warning display ratings "must never drive match outcomes").
 
 ## 3. Business Model
 
@@ -237,7 +239,32 @@ As Head Coach, you manage additional systems that don't exist for lower roles:
 
 - **Deep historical tracking**, not just your current season: career and season stat leaders, program records (most wins, longest streaks), award winners, a Hall of Fame for legendary players/coaches, and a trophy case of championships won.
 - This is a deliberate "legacy" payoff for long dynasties, not an afterthought.
-- **Reference point:** the team's existing Dynasty Tracker project (built for tracking CFB27 dynasties) is being reviewed for concrete data-model and presentation ideas — findings will be added to this document once that review completes (see §14).
+
+### 10.1 Architecture: derive from raw facts, don't store precomputed records
+
+Based directly on reviewing the team's Dynasty Tracker project (§14): store only **atomic facts** — `Game`, `Season`, `PlayerGameStat` rows — and compute every leaderboard, streak, split, and title count as a **pure function over those facts**, scoped flexibly (single season / career / whole program across coaches / all-time league-wide). Nothing about "records" should be a value written and maintained in place; it should always be re-derivable from the raw history, the same way §5 requires play outcomes to be computed rather than looked up. This avoids an entire class of "the record didn't update / disagreed with the underlying games" bugs.
+
+### 10.2 Individual player statistics (a deliberate gap Dynasty Tracker left, closed here)
+
+Dynasty Tracker — reviewed as a direct reference point — turned out **not to track individual player statistics at all**: no passing/rushing/receiving stat lines, only team-level aggregates and awards. Headset Dynasty needs real `Player` and `PlayerSeasonStat`/`PlayerGameStat` entities with actual statistical fields, because true career/single-season statistical leaderboards (not just win-loss records and awards) are part of the ask in this section. This is the main way Headset Dynasty's records system needs to go further than the reference project, not just copy it.
+
+### 10.3 Program history spans many coaches, not just yours
+
+Because Headset Dynasty's coaching-carousel design (§4.3) has coaches — yours and every AI coach — moving between schools over a career, program-level all-time records must aggregate across **every coach who ever held the job**, not just the current user's tenure. (Dynasty Tracker didn't need this — it only ever tracks one user's own coaching career at one identity.) A program's record book is a first-class thing independent of who's currently coaching it; a coach's personal career record (their own tenure record across every school they've coached at) is a separate, second view over the same underlying game history.
+
+### 10.4 Awards as a normalized table
+
+Track awards/honors (All-American, All-Conference, Heisman-equivalent, draft picks) as a proper `Award`/`Honor` table (type, year, player, tier) rather than embedding them inside season records — needed once cross-program and league-wide leaderboards matter (e.g. "most All-Americans produced, all-time, across all 130 programs"), which is squarely in scope here given the AI-coach-driven living league (§4.3, §10.3).
+
+### 10.5 UI patterns to reuse
+
+Several presentation patterns from Dynasty Tracker's UI are worth carrying forward close to as-is:
+- **Trophy Case**: an icon-tile achievement grid (titles, playoff trips, All-Americans, Heismans, draft picks), visually dimmed when empty.
+- **Rivalry ledger**: per-opponent head-to-head record, current streak, and last-played year — a natural fit for the rivalry-game mechanic already in §5.4.
+- **Playoff bracket view**: modeled as flat fields per round (not a nested tree) — directly matches the 12-team CFP structure already decided in §8.1.
+- **Season-end shareable text recap** (nice-to-have, not core scope): an auto-generated plain-text narrative of the season (record, honors, recruiting class, career-to-date) formatted for easy copy/paste elsewhere.
+
+**Full research reports:** `docs/research/cricket-manager-lessons.md` and `docs/research/dynasty-tracker-notes.md`.
 
 ## 11. Accounts, Saves & Social
 
@@ -274,20 +301,19 @@ These are known-open items, not forgotten — to be resolved in future planning 
 - [ ] **"Active attributes" UI presentation** (§5.8) needs an actual mockup/prototype before being treated as validated — user explicitly wants to see it in practice, not just approve it in the abstract.
 - [ ] Exact contents of the shared coach skill tree beyond scouting (recruiting pitch, development, play-calling/scheme mastery, program management, etc. were floated as categories but not finalized).
 - [ ] Exact numeric shape of the situational size modifiers (§5.10) — e.g. how much a height advantage should shift a contested-catch probability — needs real formula work, not just the qualitative direction agreed so far.
-- [ ] Findings from the Cricket Manager architecture review (in progress — see §14).
-- [ ] Findings from the Dynasty Tracker records/stats review (in progress — see §14).
 - [ ] Detailed screen-by-screen UI/UX design (only the high-level visual style — "clean modern sports app" — has been set).
-- [ ] Detailed data schema definitions (tables/interfaces) for teams, players, coaches, recruits, and the custom-DB import format.
+- [ ] Detailed data schema definitions (tables/interfaces) for teams, players, coaches, recruits, the custom-DB import format, and the records/stats entities from §10 (`Player`, `PlayerSeasonStat`/`PlayerGameStat`, `Award`).
 
 ## 14. Research Notes
 
-- **Cricket Manager** (`jbaxmeyer-personal/cricket-manager`) — cloned for review; architecture/lessons-learned findings pending, will be appended here.
-- **Dynasty Tracker** (`jbaxmeyer-personal/dynasty-tracker`) — cloned for review; records/stats-system findings pending, will be appended here.
+- **Cricket Manager** (`jbaxmeyer-personal/cricket-manager`) — reviewed. Godot/GDScript desktop project. Its match-resolution engine was cleanly isolated as pure functions (validates the framework-agnostic-core goal), but everything else (recruiting-equivalent, development, AI, economy) was fused into one giant mutable singleton the UI reached into directly hundreds of times — the direct cause of several documented production bugs and the likely root of "awesome but difficult to build." Also confirmed the value of separating sim attributes from display ratings, and the risk of hardcoding roster data instead of loading it externally. Full report: `docs/research/cricket-manager-lessons.md`.
+- **Dynasty Tracker** (`jbaxmeyer-personal/dynasty-tracker`) — reviewed. A React + TypeScript + Firebase web app (a close real-world precedent for Headset Dynasty's own planned stack) built for tracking CFB27 dynasties. Strong "derive records from raw facts" architecture and reusable UI patterns (Trophy Case, rivalry ledger, flat-field bracket view) — but notably has **no individual player statistics**, only team/program-level records and awards, which is the main gap Headset Dynasty's records system needs to close rather than replicate. Full report: `docs/research/dynasty-tracker-notes.md`.
 
 ## 15. Recommended Build Order (proposed, not yet started)
 
 1. **Data layer & schema** — team/player/coach/recruit schema, including the custom-DB import format, since everything else depends on it.
 2. **Core simulation engine, headless** — prove deterministic play resolution works (and reads well as text output) via a script that can simulate a full game/season with no UI. Highest-risk, most novel piece — validate it before investing in screens on top of it.
+   - **Build a statistical calibration + regression-testing harness alongside it**, not after — directly adopted from what worked in Cricket Manager (§14): a headless runner that simulates many games/seasons through the real engine code (never a mock or a hand-ported copy of the formulas) and checks output against real college-football statistical benchmarks, plus long-run stability across many simulated seasons (watching for rating inflation/collapse).
 3. **Vertical slice** — one role, one team, one season, real UI, end-to-end — to validate the full loop feels good before broadening to the entire 130-team world and all three coaching roles.
 
 ---
