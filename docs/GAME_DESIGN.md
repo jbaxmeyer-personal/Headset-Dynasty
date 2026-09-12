@@ -93,7 +93,9 @@ A **separate stat from reputation**: coach skill points **only accumulate, never
 
 Distinct from personal coach Reputation (§4.4): **Prestige is a program-level stat**, not a coach-level one. It belongs to the school, persists independent of who's coaching (including under AI coaches), and is inherited by whoever takes the job next — a coach walking into a blue-blood program starts with that program's existing Prestige, for better or worse.
 
-**1-5 star scale** (more stars = better) — not the letter-grade scale used elsewhere (§5.7), matching the familiar recruiting-star convention instead. Driven by a similar input set to personal Reputation, but tracked at the program level: overall win/loss record, Power 4 wins/losses (weighted higher), conference win/loss record, recruiting class ranking, end-of-season team ranking, and players drafted.
+**1-5 star scale, in half-star increments** (1.0 to 5.0 in 0.5 steps; more stars = better) — not the letter-grade scale used elsewhere (§5.7), matching the familiar recruiting-star convention instead. Driven by a similar input set to personal Reputation, but tracked at the program level: overall win/loss record, Power 4 wins/losses (weighted higher), conference win/loss record, recruiting class ranking, end-of-season team ranking, and players drafted.
+
+**Recalculated once per year, at the end of the offseason** (§7.3) — not continuously during the season. A program's Prestige stays fixed for the whole season and recruiting cycle, then updates based on everything that happened that year, right before the next season begins.
 
 **Mechanical effects:**
 - **Sizes the weekly recruiting action-point pool** (§6.2) — a higher-Prestige program generates more recruiting points to spend on scouting and pitching each week, mirroring how blue-blood programs run bigger recruiting operations in real life.
@@ -224,6 +226,26 @@ Recruiting (and the whole simulation) must work identically whether running on t
 - The **position coach decides how to spend** those development points on their players (which attributes to improve). This is the actively-managed part of player development — you don't run practices, but you do direct growth.
 - Development points can also be spent on **Familiarity at a new position** (§5.9) and on a player's **weight** via a strength-and-conditioning track (§5.10) — covering position conversions and physical development, not just raw skill attributes.
 
+### 7.1 Eligibility & roster movement
+
+- **Five years of eligibility per player** — matching the current real NCAA rule, deliberately chosen over modeling a separate redshirt mechanic. A player simply has up to five years on a roster; there's no discrete "redshirt or don't" decision to track.
+- **Transfer portal**: players can leave (unhappy, buried on the depth chart, chasing a better opportunity) and you can recruit incoming transfers from other schools, not just high schoolers — real two-way roster churn, not just an outflow.
+- **Early NFL draft declarations**: star underclassmen can leave early for the draft. This is **largely outside your control** — it's a realistic risk/consequence of successful player development, not a lever you pull.
+
+### 7.2 Roster size limit
+
+**105 total players**, matching the current real college football roster limit (the 2025 rule change from the old 85-scholarship cap). A team cannot carry more than this at once.
+
+### 7.3 Offseason sequence
+
+The offseason runs in a defined order, which matters because of the roster limit:
+
+1. **Recruiting signs** (high school signees) **and the transfer portal** (departures and incoming transfers) resolve first — you see your full incoming class and any portal movement before anything else happens.
+2. **Roster cuts follow** — if signing/portal activity has pushed you over the 105-player limit, you must cut existing roster players to get back under it. This is a deliberate source of tension: a great signing class can force a hard call on a fringe veteran.
+3. **Coaching carousel / staff changes** (§4.3) — job market movement, promotions, staff hires.
+4. **Offseason player development bump** (§7, the large point bump) is applied.
+5. **School Prestige recalculates** (§4.6) based on the year that just concluded, locking in for the upcoming season.
+
 ## 8. World & Data
 
 ### 8.1 League scale & structure
@@ -316,7 +338,6 @@ These are known-open items, not forgotten — to be resolved in future planning 
 
 - [ ] Price point for the one-time purchase (deliberately deferred to closer to launch).
 - [ ] **"Active attributes" UI presentation** (§5.8) needs an actual mockup/prototype before being treated as validated — user explicitly wants to see it in practice, not just approve it in the abstract.
-- [ ] Exact contents of the shared coach skill tree beyond scouting (recruiting pitch, development, play-calling/scheme mastery, program management, etc. were floated as categories but not finalized).
 - [ ] Exact numeric shape of the situational size modifiers (§5.10) — e.g. how much a height advantage should shift a contested-catch probability — needs real formula work, not just the qualitative direction agreed so far.
 - [ ] Exactly how weekly recruiting actions/interest (§6.2) mathematically feed into the 50/25/25 commitment-decision weights (§6.3) — e.g. whether accumulated interest is a threshold to make a recruit's shortlist at all, or a continuously blended factor. Directionally settled, precise formula still open.
 - [ ] Coach skill tree (§4.5) is intentionally incomplete — Scouting, Recruiting, Player Development, and Tactics are locked in; more categories may be added later.
