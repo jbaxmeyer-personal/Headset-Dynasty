@@ -2,7 +2,7 @@
 
 **Status:** Living draft. This document reflects everything decided in planning conversations so far. Sections marked **TBD** are open and will be filled in as we keep talking. Nothing here is final until we've validated it feels good to build and play — but this is our source of truth for what we're building.
 
-**Last updated:** 2026-09-11
+**Last updated:** 2026-09-12
 
 ---
 
@@ -78,12 +78,27 @@ Reputation gates which jobs you're eligible for. It **can go up or down** (unlik
 
 ### 4.5 Coach skill points (progression)
 
-A **separate stat from reputation**: coach skill points **only accumulate, never decrease**, earned from the same category of positive events (wins, Power 4 wins, signing recruits, players drafted). Spent on a **broad, shared coach skill tree** (not siloed per role) — covering things like:
+A **separate stat from reputation**: coach skill points **only accumulate, never decrease**, earned from the same category of positive events (wins, Power 4 wins, signing recruits, players drafted). Spent as a **flat list of efficiency multipliers** — no role-gating (any coach can invest in any skill regardless of current role) and no prerequisite tree. Locked in so far:
 
-- Scouting efficiency (see §6.1)
-- Recruiting pitch/persuasion
-- Player development effectiveness
-- Other coaching competencies (**exact tree contents TBD — to be designed together**)
+| Skill | Effect |
+|---|---|
+| **Scouting** | Reduces the point cost to fully scout a recruit (§6.1). |
+| **Recruiting** | Increases the effectiveness of your recruiting pitches — how much recruit interest your weekly actions generate (§6.2). |
+| **Player Development** | Increases development points earned per practice (in-season drip and offseason bump, §7) for players in your unit. |
+| **Tactics** | Boosts the in-game effective performance of whichever players/side of the ball you have direct authority over (§4.2) — a small positive nudge to your side's matchup differential (§5.1) in plays your role controls. |
+
+**Deliberately left open-ended** — more categories may be added as they come up; this is not meant to be a complete/final list yet.
+
+### 4.6 School / Program Prestige
+
+Distinct from personal coach Reputation (§4.4): **Prestige is a program-level stat**, not a coach-level one. It belongs to the school, persists independent of who's coaching (including under AI coaches), and is inherited by whoever takes the job next — a coach walking into a blue-blood program starts with that program's existing Prestige, for better or worse.
+
+Same letter-grade scale as everything else (A+ to F). Driven by a similar input set to personal Reputation, but tracked at the program level: overall win/loss record, Power 4 wins/losses (weighted higher), conference win/loss record, recruiting class ranking, end-of-season team ranking, and players drafted.
+
+**Mechanical effects:**
+- **Sizes the weekly recruiting action-point pool** (§6.2) — a higher-Prestige program generates more recruiting points to spend on scouting and pitching each week, mirroring how blue-blood programs run bigger recruiting operations in real life.
+- **Is the concrete implementation of the "program prestige & recent success" 25% factor** in the recruit commitment formula (§6.3) — that factor isn't an abstract number, it's this stat.
+- **Complements, rather than duplicates, the NIL-collective-strength lever** (§9): Prestige represents brand/tradition, NIL represents money — both feed recruiting success as separate, stackable levers, matching how both actually matter in real college football recruiting.
 
 ## 5. Simulation Engine
 
@@ -184,7 +199,9 @@ Recruiting is intentionally **the deepest system in the game** — the core loop
 
 ### 6.2 Weekly recruiting interaction
 
-**Action-point driven**, week to week: each week you get a pool of recruiting points/hours to spend across your target list on discrete actions — phone calls, home visits, campus visits, scholarship offers. A recruit's interest shifts based on the actions taken (and by whom — the specific coach engaging matters).
+**Action-point driven**, week to week: each week you get a pool of recruiting points/hours to spend across your target list on discrete actions — phone calls, home visits, campus visits, scholarship offers. A recruit's interest shifts based on the actions taken (and by whom — the specific coach engaging matters, boosted by the Recruiting coach skill, §4.5).
+
+**The size of that weekly pool is driven by School Prestige** (§4.6) — a higher-Prestige program simply has more recruiting points to work with each week than a lower-Prestige one, before any coach skill is even factored in.
 
 ### 6.3 Commitment decision
 
@@ -233,7 +250,7 @@ Recruiting (and the whole simulation) must work identically whether running on t
 As Head Coach, you manage additional systems that don't exist for lower roles:
 
 - **Staff hiring:** a full AI coach market. Every coach in the league (including your own eventual assistants) is a real, simulated individual with their own skill/reputation/salary expectations. As HC you scout, negotiate, and hire within your staff budget — and rival schools can poach your assistants right back.
-- **Program economy:** a meaningful budget/facilities layer — stadium/facility upgrades (which grant recruiting/development bonuses), staff salaries (better coaches cost more), and an NIL-collective-strength stat that factors into recruiting pitches.
+- **Program economy:** a meaningful budget/facilities layer — stadium/facility upgrades (which grant recruiting/development bonuses), staff salaries (better coaches cost more), and an NIL-collective-strength stat that factors into recruiting pitches alongside, and separately from, School Prestige (§4.6).
 
 ## 10. Records & History
 
@@ -301,6 +318,8 @@ These are known-open items, not forgotten — to be resolved in future planning 
 - [ ] **"Active attributes" UI presentation** (§5.8) needs an actual mockup/prototype before being treated as validated — user explicitly wants to see it in practice, not just approve it in the abstract.
 - [ ] Exact contents of the shared coach skill tree beyond scouting (recruiting pitch, development, play-calling/scheme mastery, program management, etc. were floated as categories but not finalized).
 - [ ] Exact numeric shape of the situational size modifiers (§5.10) — e.g. how much a height advantage should shift a contested-catch probability — needs real formula work, not just the qualitative direction agreed so far.
+- [ ] Exactly how weekly recruiting actions/interest (§6.2) mathematically feed into the 50/25/25 commitment-decision weights (§6.3) — e.g. whether accumulated interest is a threshold to make a recruit's shortlist at all, or a continuously blended factor. Directionally settled, precise formula still open.
+- [ ] Coach skill tree (§4.5) is intentionally incomplete — Scouting, Recruiting, Player Development, and Tactics are locked in; more categories may be added later.
 - [ ] Detailed screen-by-screen UI/UX design (only the high-level visual style — "clean modern sports app" — has been set).
 - [ ] Detailed data schema definitions (tables/interfaces) for teams, players, coaches, recruits, the custom-DB import format, and the records/stats entities from §10 (`Player`, `PlayerSeasonStat`/`PlayerGameStat`, `Award`).
 
