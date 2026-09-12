@@ -93,7 +93,7 @@ A **separate stat from reputation**: coach skill points **only accumulate, never
 
 Distinct from personal coach Reputation (§4.4): **Prestige is a program-level stat**, not a coach-level one. It belongs to the school, persists independent of who's coaching (including under AI coaches), and is inherited by whoever takes the job next — a coach walking into a blue-blood program starts with that program's existing Prestige, for better or worse.
 
-Same letter-grade scale as everything else (A+ to F). Driven by a similar input set to personal Reputation, but tracked at the program level: overall win/loss record, Power 4 wins/losses (weighted higher), conference win/loss record, recruiting class ranking, end-of-season team ranking, and players drafted.
+**1-5 star scale** (more stars = better) — not the letter-grade scale used elsewhere (§5.7), matching the familiar recruiting-star convention instead. Driven by a similar input set to personal Reputation, but tracked at the program level: overall win/loss record, Power 4 wins/losses (weighted higher), conference win/loss record, recruiting class ranking, end-of-season team ranking, and players drafted.
 
 **Mechanical effects:**
 - **Sizes the weekly recruiting action-point pool** (§6.2) — a higher-Prestige program generates more recruiting points to spend on scouting and pitching each week, mirroring how blue-blood programs run bigger recruiting operations in real life.
