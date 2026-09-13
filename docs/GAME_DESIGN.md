@@ -22,6 +22,7 @@ Core promise to the player: you are a football coach with a specific job (positi
 - **Data schema:** Teams, conferences, players, coaches, and recruits are modeled as clean, documented data structures (see §8) from day one, because the custom-DB import feature depends on the "default" fictional world and any "custom" imported world being loadable by the exact same engine.
 - **Architectural rule, learned the hard way from Cricket Manager** (see §14): the "pure, data-in/data-out engine, no UI coupling" discipline must apply to **the entire simulation layer** — recruiting, player/coach development, the coaching AI, and the program economy — not just play resolution. Cricket Manager's match engine was cleanly isolated, but its career/season simulation was fused into one giant autoloaded singleton that the UI mutated directly in hundreds of places, which is exactly what made it hard to build and would have blocked a second UI. Every system in Headset Dynasty's engine should be reachable only through plain functions taking/returning data, never through a UI screen reaching into shared mutable state.
 - **Display vs. simulation values must stay separate**: attributes that drive the sim (hidden 0-100 numbers, §5.7) must never be replaced in formulas by whatever's shown to the player (letter grades, or any future composite "Overall" rating) — the display value is derived *from* the sim value, one direction only, never the reverse. This mirrors a rule Cricket Manager enforced explicitly (and a comment in its code warning display ratings "must never drive match outcomes").
+- **There is exactly one game engine — never a second "test" or "calibration" engine.** This is a hard rule, not a preference, born from the single most painful mistake on Cricket Manager: balance work happened against a separate sim built to test the engine's logic, and fixes made there had zero effect on the actual engine real players' games ran on. The production engine must be **directly callable, headless, at high speed** — the exact same function that resolves one play for a real user's live game must also be the function a batch harness calls thousands of times in a row with no UI and no artificial pacing. "Testing the engine" is never a separate feature; it is running the real engine a lot, fast. See §15 for how this gates the build order and §5.12 for the acceptance bar this enables.
 
 ## 3. Business Model
 
@@ -185,9 +186,27 @@ Height/weight are **not just flavor** — they matter in two ways:
 
 **Weight can change over a career** through development investment (a strength-and-conditioning track, tied to development points) — modeling real freshman weight-room gains, a coach intentionally bulking up a lineman, or slimming down a player as part of a position conversion (tying directly into §5.9 Familiarity). Height is fixed.
 
+**Initial formula hypothesis for the situational play math** (§5.1) — an unvalidated starting point, not a locked number, per §5.12:
+
+Every situational factor (size included) is expressed as a signed offset added to the base attribute-differential score before it's converted into the outcome probability curve: `attribute differential + situational modifiers = final differential → probability curve → roll`.
+
+- **Trench mass** (every run play's blocking sub-matchup): `(OL avg weight − DL avg weight) × 0.15`, capped at ±8 differential points.
+- **Goal-line / short-yardage bonus** (stacks on top of trench mass; only within ~3 yards of the goal line or in a flagged short-yardage situation): `(OL+RB avg weight − DL avg weight) × 0.25`, capped at ±12.
+- **Contested catch / jump ball** (only on plays flagged as 50/50-ball situations — fades, red-zone jump balls): `(receiver height − nearest defender height, in inches) × 1.5`, capped at ±10.
+
+For scale, a genuine talent mismatch in the underlying attributes might swing the differential ±40-60 — these caps are meant to keep size as a real, felt factor that tips close matchups without ever overriding a real skill gap on its own. **The specific coefficients and caps above are exactly what §5.12's calibration process exists to correct** — they should be expected to change once real simulated output can be compared against real statistical benchmarks.
+
 ### 5.11 Recruiting position tags
 
 Despite the shared-attribute-group model underneath, recruits and players still carry a **projected/assigned position tag** (e.g., "CB," not just "Athlete") for recruiting-board organization, depth-chart purposes, and to drive realistic height/weight generation (§5.10). The group model is an internal data/flexibility architecture — it does not remove the concept of "what position is this guy" from the player-facing experience.
+
+### 5.12 Statistical validation & calibration
+
+**The engine's correctness bar is empirical, not theoretical.** Per the hard architectural rule in §2 (one engine, never a separate test/calibration engine), validating the sim means: **run the real production engine, headless, hundreds to thousands of times in a row, and compare the aggregate output against real college football statistical benchmarks** — yards per play, completion percentage, scoring average, third-down conversion rate, and similar published stat distributions, broken down by situation wherever real benchmarks support it.
+
+This directly answers the open question about how to actually validate things like the size-modifier formula in §5.10: **every number in this document that shapes play outcomes is a starting hypothesis, not a locked formula**, until it's been run through this process and adjusted until the engine's aggregate output falls within realistic range. This isn't a one-time check — it's a standing requirement every time the play-math formulas change.
+
+This is also why the recommended build order (§15) puts a statistical calibration + regression harness immediately alongside the headless engine, not after it: **the engine isn't "working" until it passes this test**, however many tuning passes that takes. This is the direct fix for the specific failure mode that made Cricket Manager so frustrating (§14): its balance/calibration tooling ran against a hand-ported copy of the formulas in a different language, so fixes made there never touched the actual engine real games ran on. That cannot happen here, because there is only one engine, and the calibration harness calls it directly.
 
 ## 6. Recruiting
 
@@ -338,7 +357,7 @@ These are known-open items, not forgotten — to be resolved in future planning 
 
 - [ ] Price point for the one-time purchase (deliberately deferred to closer to launch).
 - [ ] **"Active attributes" UI presentation** (§5.8) needs an actual mockup/prototype before being treated as validated — user explicitly wants to see it in practice, not just approve it in the abstract.
-- [ ] Exact numeric shape of the situational size modifiers (§5.10) — e.g. how much a height advantage should shift a contested-catch probability — needs real formula work, not just the qualitative direction agreed so far.
+- [ ] The situational size-modifier coefficients (§5.10) have an initial hypothesis written down, but are explicitly expected to change once run through the statistical calibration harness (§5.12) against real engine output — not resolved until that empirical pass happens.
 - [ ] Exactly how weekly recruiting actions/interest (§6.2) mathematically feed into the 50/25/25 commitment-decision weights (§6.3) — e.g. whether accumulated interest is a threshold to make a recruit's shortlist at all, or a continuously blended factor. Directionally settled, precise formula still open.
 - [ ] Coach skill tree (§4.5) is intentionally incomplete — Scouting, Recruiting, Player Development, and Tactics are locked in; more categories may be added later.
 - [ ] Detailed screen-by-screen UI/UX design (only the high-level visual style — "clean modern sports app" — has been set).
@@ -353,7 +372,7 @@ These are known-open items, not forgotten — to be resolved in future planning 
 
 1. **Data layer & schema** — team/player/coach/recruit schema, including the custom-DB import format, since everything else depends on it.
 2. **Core simulation engine, headless** — prove deterministic play resolution works (and reads well as text output) via a script that can simulate a full game/season with no UI. Highest-risk, most novel piece — validate it before investing in screens on top of it.
-   - **Build a statistical calibration + regression-testing harness alongside it**, not after — directly adopted from what worked in Cricket Manager (§14): a headless runner that simulates many games/seasons through the real engine code (never a mock or a hand-ported copy of the formulas) and checks output against real college-football statistical benchmarks, plus long-run stability across many simulated seasons (watching for rating inflation/collapse).
+   - **Build the statistical calibration + regression-testing harness at the same time, not after, and it must call this exact engine module** — non-negotiable, per the hard rule in §2 and the validation standard in §5.12. The harness runs the real, production, headless engine hundreds to thousands of times and checks aggregate output against real college-football statistical benchmarks, plus long-run stability across many simulated seasons (watching for rating inflation/collapse). This is not a "nice to have" testing feature — the engine is not considered done until it passes this, and every tuning pass on play-math formulas (like the size modifiers in §5.10) goes back through this same harness, never a separate one.
 3. **Vertical slice** — one role, one team, one season, real UI, end-to-end — to validate the full loop feels good before broadening to the entire 130-team world and all three coaching roles.
 
 ---
