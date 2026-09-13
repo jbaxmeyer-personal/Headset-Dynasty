@@ -2,7 +2,7 @@
 
 **Status:** Living draft. This document reflects everything decided in planning conversations so far. Sections marked **TBD** are open and will be filled in as we keep talking. Nothing here is final until we've validated it feels good to build and play — but this is our source of truth for what we're building.
 
-**Last updated:** 2026-09-12
+**Last updated:** 2026-09-13
 
 ---
 
@@ -102,6 +102,32 @@ Distinct from personal coach Reputation (§4.4): **Prestige is a program-level s
 - **Sizes the weekly recruiting action-point pool** (§6.2) — a higher-Prestige program generates more recruiting points to spend on scouting and pitching each week, mirroring how blue-blood programs run bigger recruiting operations in real life.
 - **Is the concrete implementation of the "program prestige & recent success" 25% factor** in the recruit commitment formula (§6.3) — that factor isn't an abstract number, it's this stat.
 - **Complements, rather than duplicates, the NIL-collective-strength lever** (§9): Prestige represents brand/tradition, NIL represents money — both feed recruiting success as separate, stackable levers, matching how both actually matter in real college football recruiting.
+
+### 4.7 Weekly Game Loop (In-Season)
+
+**Free-form, not fixed daily phases**: within a week, you can take recruiting actions (§6.2), review/adjust your gameplan (§5.2), and check player development (§7) in any order, then trigger a single **"Advance to Game Day"** action when ready. This matches the 2-5 minute session goal (§11.1) rather than forcing a rigid day-by-day structure.
+
+**Every game in the league that week — yours and every AI-vs-AI matchup — is fully simulated through the exact same production engine** (§2, §5.12), regardless of whether the player watches it. By default, only your own game gets automatic full play-by-play; for every other game around the country, the player sees a box score/final result by default but **can tap into any specific game to view its full play-by-play on demand** — the underlying data always exists, since the engine computed it fully either way.
+
+Right when your own game ends: a **dedicated recap screen** (final score, key stats, notable performances, ranking movement) — a real moment before moving on, not just a silent update to your schedule.
+
+**Recruiting cadence stays constant all year** — the same weekly recruiting-action rhythm applies during the regular season, conference championship week, and bowl/playoff weeks, with no special quiet periods or signing-day event modeled as a distinct mechanic.
+
+### 4.8 Season & Calendar Structure
+
+- **12 regular-season games per team**, matching current real FBS structure (consistent with already mirroring other current real rules: 5-year eligibility §7.1, 105-man roster §7.2, 12-team CFP §8.1).
+- **Non-conference scheduling has real structure**, not randomized: schedule generation deliberately creates a couple of lopsided "buy games" against weaker programs, plus one or two marquee non-conference matchups — this matters mechanically because beating a ranked non-conference opponent should carry real weight for Reputation (§4.4) and Prestige (§4.6).
+- After the regular season: conference championships, then the 12-team playoff and bowl games (§8.1), then the offseason sequence (§7.3).
+
+### 4.9 Job Security & Hot Seat
+
+Firing/job-market consequences only happen **between seasons**, as part of the offseason sequence (§7.3) — there is no mid-season firing, keeping in-season state management simple.
+
+However, the player gets **visible hot-seat awareness throughout the season** — a running sense of how happy the administration is with your performance, weighed against preseason expectations (tied to School Prestige, §4.6, and how the season is actually going) — so a bad season creates real, felt tension even though the actual consequence doesn't land until the offseason.
+
+### 4.10 Career Retirement
+
+A coach can **voluntarily retire at any point**, ending that save's active career and triggering a **career retrospective screen** — a Hall-of-Fame-style summary of the whole coaching career, drawing directly on the records/history system (§10) and Trophy Case (§10.5). This gives a long dynasty a real sense of closure, distinct from just stopping play or hitting the free-tier season cap (§3).
 
 ## 5. Simulation Engine
 
@@ -248,7 +274,7 @@ Recruiting (and the whole simulation) must work identically whether running on t
 ### 7.1 Eligibility & roster movement
 
 - **Five years of eligibility per player** — matching the current real NCAA rule, deliberately chosen over modeling a separate redshirt mechanic. A player simply has up to five years on a roster; there's no discrete "redshirt or don't" decision to track.
-- **Transfer portal**: players can leave (unhappy, buried on the depth chart, chasing a better opportunity) and you can recruit incoming transfers from other schools, not just high schoolers — real two-way roster churn, not just an outflow.
+- **Transfer portal**: players can leave and you can recruit incoming transfers from other schools, not just high schoolers — real two-way roster churn, not just an outflow. A player's chance of entering the portal rises from: **playing-time dissatisfaction** (buried on the depth chart despite being ready), **a coaching change** (the position coach/coordinator who recruited or developed them leaving), and **some baseline randomness** that applies even to happy, well-fitting players — deliberately not tied to scheme/position fit specifically.
 - **Early NFL draft declarations**: star underclassmen can leave early for the draft. This is **largely outside your control** — it's a realistic risk/consequence of successful player development, not a lever you pull.
 
 ### 7.2 Roster size limit
@@ -346,6 +372,10 @@ Target: a typical week (recruiting actions + game sim + reports) should be playa
 ### 11.5 Difficulty
 
 **No difficulty/customization sliders.** One well-tuned default experience for everyone (no injury-frequency toggles, AI-aggressiveness sliders, etc.) — keeps balance/QA surface area contained.
+
+### 11.6 Push notifications
+
+**None at launch.** No push notifications for v1 (recruit decisions, job offers, game-day reminders, etc. were considered) — avoids notification-permission friction for the initial release; can be reconsidered later if re-engagement data suggests it's worth the added complexity.
 
 ## 12. Branding
 
