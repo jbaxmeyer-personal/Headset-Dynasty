@@ -2,7 +2,7 @@
 
 **Status:** Living draft. This document reflects everything decided in planning conversations so far. Sections marked **TBD** are open and will be filled in as we keep talking. Nothing here is final until we've validated it feels good to build and play — but this is our source of truth for what we're building.
 
-**Last updated:** 2026-09-13
+**Last updated:** 2026-09-28
 
 ---
 
@@ -10,7 +10,7 @@
 
 Headset Dynasty is a mobile college football management sim in the spirit of Football Manager — but for college football, and built mobile-first from day one instead of ported from desktop. The defining principle, set explicitly against the lesson learned from the team's earlier Cricket Manager project: **plan extensively before building**, and build a **real simulation, not randomized outcomes dressed up as one**.
 
-Core promise to the player: you are a football coach with a specific job (position coach, coordinator, or head coach) at a specific school, competing in a living, 130-team fictional FBS world, climbing a real coaching career ladder through recruiting, player development, and on-field results that are calculated from real player and team data — not dice rolls.
+Core promise to the player: you are a football coach with a specific job (position coach, coordinator, or head coach) at a specific school, competing in a living, ~138-team fictional FBS world, climbing a real coaching career ladder through recruiting, player development, and on-field results that are calculated from real player and team data — not dice rolls.
 
 ## 2. Platform & Technical Architecture
 
@@ -295,14 +295,17 @@ The offseason runs in a defined order, which matters because of the roster limit
 
 ### 8.1 League scale & structure
 
-- **Full FBS scale: ~130 fictional teams across 10+ conferences.**
+- **Full FBS scale, matching today's real college football structure as closely as possible**: ~138 fictional teams across **10 conferences** — **4 "Power" conferences** (roughly 16-17 teams each, ~65-67 combined) and **6 "Group" conferences** (American ~14, MAC ~13, Mountain West ~10, Sun Belt ~14, Conference USA ~10, and a smaller ~8-team conference) — plus **2 independents** not affiliated with any conference. These specific per-conference numbers were pulled from a live web search in September 2026 and have some internal inconsistency between sources (conference realignment has been genuinely volatile in real college football) — **treat the overall shape (10 conferences, 4-power/6-group split, ~138 total, 2 independents) as locked, but re-verify the exact per-conference counts against current reality at actual content-authoring time**, since real membership can and does keep shifting.
+- **No divisions**: each conference is a single table; the top 2 teams by conference record meet in the conference championship game (matches the current real trend after realignment).
+- **9 conference games per team** (of the 12-game season, §4.8) for every conference-affiliated team, regardless of conference size — the remaining 3 are non-conference (buy games + marquee matchups, §4.8). Independents play a full 12-game non-conference-style schedule instead, the way Notre Dame does today.
+- **The conference/schedule data model must be fully generic — no hardcoded assumptions about conference count or size anywhere in the engine.** This is what actually delivers on "make uploading real teams as easy as possible" (more so than matching the default world's exact numbers): a custom DB (§8.3) can define any number of conferences, of any size, with any number of independents, and the engine and schedule generator must work identically for it. The default fictional world above is simply the first dataset loaded into that same generic structure.
 - **Postseason mirrors the current real-world format**: conference championships feed a 12-team playoff bracket; non-playoff teams play in bowl games.
 
 ### 8.2 Team identity (default fictional world)
 
-- **Hand-crafted, not procedurally generated** — a fixed roster of ~130 authored fictional schools, conferences, mascots, and colors, designed collaboratively rather than name-banked.
+- **Hand-crafted, not procedurally generated** — a fixed roster of ~138 authored fictional schools, conferences, mascots, and colors, designed collaboratively rather than name-banked.
 - **Visual style:** clean, modern sports-app aesthetic (cards, stats, ESPN-app-like), not a retro text-terminal look.
-- **Art assets for the default fictional teams: initials/programmatic badges only** — colors + team initials, no illustrated logos or mascot art. This keeps 130 teams achievable without an art production pipeline.
+- **Art assets for the default fictional teams: initials/programmatic badges only** — colors + team initials, no illustrated logos or mascot art. This keeps ~138 teams achievable without an art production pipeline.
 
 ### 8.3 Custom DB import (real teams, or any user-created world)
 
@@ -338,7 +341,7 @@ Because Headset Dynasty's coaching-carousel design (§4.3) has coaches — yours
 
 ### 10.4 Awards as a normalized table
 
-Track awards/honors (All-American, All-Conference, Heisman-equivalent, draft picks) as a proper `Award`/`Honor` table (type, year, player, tier) rather than embedding them inside season records — needed once cross-program and league-wide leaderboards matter (e.g. "most All-Americans produced, all-time, across all 130 programs"), which is squarely in scope here given the AI-coach-driven living league (§4.3, §10.3).
+Track awards/honors (All-American, All-Conference, Heisman-equivalent, draft picks) as a proper `Award`/`Honor` table (type, year, player, tier) rather than embedding them inside season records — needed once cross-program and league-wide leaderboards matter (e.g. "most All-Americans produced, all-time, across all ~138 programs"), which is squarely in scope here given the AI-coach-driven living league (§4.3, §10.3).
 
 ### 10.5 UI patterns to reuse
 
@@ -390,6 +393,8 @@ These are known-open items, not forgotten — to be resolved in future planning 
 - [ ] The situational size-modifier coefficients (§5.10) have an initial hypothesis written down, but are explicitly expected to change once run through the statistical calibration harness (§5.12) against real engine output — not resolved until that empirical pass happens.
 - [ ] Exactly how weekly recruiting actions/interest (§6.2) mathematically feed into the 50/25/25 commitment-decision weights (§6.3) — e.g. whether accumulated interest is a threshold to make a recruit's shortlist at all, or a continuously blended factor. Directionally settled, precise formula still open.
 - [ ] Coach skill tree (§4.5) is intentionally incomplete — Scouting, Recruiting, Player Development, and Tactics are locked in; more categories may be added later.
+- [ ] Exact per-conference membership counts (§8.1) were pulled from a live web search with some internal inconsistency between sources — the overall shape (10 conferences, 4-power/6-group split, ~138 total, 2 independents) is locked, but re-verify the precise numbers against current reality when the world's content is actually authored, since real conference realignment can shift again before launch.
+- [ ] Full creative content authoring (naming all ~138 schools, 10 conferences, mascots, colors, rivalries) is explicitly deferred as its own separate, dedicated effort — not something this systems/mechanics planning conversation is covering.
 - [ ] Detailed screen-by-screen UI/UX design (only the high-level visual style — "clean modern sports app" — has been set).
 - [ ] Detailed data schema definitions (tables/interfaces) for teams, players, coaches, recruits, the custom-DB import format, and the records/stats entities from §10 (`Player`, `PlayerSeasonStat`/`PlayerGameStat`, `Award`).
 
@@ -403,7 +408,7 @@ These are known-open items, not forgotten — to be resolved in future planning 
 1. **Data layer & schema** — team/player/coach/recruit schema, including the custom-DB import format, since everything else depends on it.
 2. **Core simulation engine, headless** — prove deterministic play resolution works (and reads well as text output) via a script that can simulate a full game/season with no UI. Highest-risk, most novel piece — validate it before investing in screens on top of it.
    - **Build the statistical calibration + regression-testing harness at the same time, not after, and it must call this exact engine module** — non-negotiable, per the hard rule in §2 and the validation standard in §5.12. The harness runs the real, production, headless engine hundreds to thousands of times and checks aggregate output against real college-football statistical benchmarks, plus long-run stability across many simulated seasons (watching for rating inflation/collapse). This is not a "nice to have" testing feature — the engine is not considered done until it passes this, and every tuning pass on play-math formulas (like the size modifiers in §5.10) goes back through this same harness, never a separate one.
-3. **Vertical slice** — one role, one team, one season, real UI, end-to-end — to validate the full loop feels good before broadening to the entire 130-team world and all three coaching roles.
+3. **Vertical slice** — one role, one team, one season, real UI, end-to-end — to validate the full loop feels good before broadening to the entire ~138-team world and all three coaching roles.
 
 ---
 
