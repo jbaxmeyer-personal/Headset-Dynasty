@@ -197,17 +197,9 @@ Long snapper is **not modeled as a distinct role/attribute** — snapping compet
 
 Universal attributes deliberately absorb several traits that would otherwise need their own slot (per direct design decisions): QB has no separate Arm Strength (covered by Strength), no Play-Action/Pocket Presence/Decision Making (covered by Awareness), no separate Scramble/Mobility (covered by Speed); RB has no separate Vision (covered by Awareness); WR/TE has no separate YAC (covered by Speed). Agility as a distinct attribute was considered and deliberately dropped — its effect is absorbed into the position-specific attributes that already imply it (Route Running, Break Tackling, Pulling, Coverage, etc.) rather than tracked separately.
 
-### 5.9 Positional Familiarity
+### 5.9 Position changes (deferred)
 
-A player can be **repositioned within their bucket** (RB ↔ WR ↔ TE; LB ↔ CB ↔ S; or between the five Offensive Line spots) without any attribute conversion — positions sharing a bucket already use the exact same attributes, just at different values. To keep this from being a costless, exploitable "move anyone anywhere instantly" mechanic:
-
-- Every player has a **Familiarity** rating (0-100) **per real position within their bucket** — starts high at their recruited/assigned position, starts low or at zero for any position in the bucket they've never played.
-- Low Familiarity **suppresses effective attribute values in play math** (not the underlying grades) — e.g., a Safety just moved to Linebacker plays like a worse linebacker than his raw numbers alone would suggest, until Familiarity rises.
-- Familiarity **climbs through playing time at the new position**, and can be **accelerated by spending development points there** — modeling the real "he needs more reps at the new spot" reality of a position change.
-
-**Cross-bucket conversions** (e.g. a WR converting to CB — offense to defense) are **not** a routine Familiarity move. They're supported, but as a rare, deliberate, narratively bigger event (an offseason coaching decision, not something available every week) — matching how genuinely uncommon that kind of conversion is in real college football, unlike same-bucket repositioning, which is common and treated as the standard mechanic above.
-
-This makes repositioning within a bucket a real, weighty-but-accessible coaching decision (worth it for a great athlete stuck behind a starter, or to fix a poor fit), while keeping full position changes across sides of the ball special rather than routine.
+Not designed yet. A player being repositioned (within a bucket or across sides of the ball) will need some mechanic eventually, but the specifics are explicitly deferred to later — not a current priority.
 
 ### 5.10 Physical profile (height & weight)
 
@@ -217,7 +209,7 @@ Height/weight are **not just flavor** — they matter in two ways:
 1. **Generation-time correlation**: body type realistically constrains which attributes a player tends to roll (a 340 lb lineman is very unlikely to also roll elite Speed).
 2. **Situational play math**: size acts as a targeted modifier in the specific real-football moments where it matters most — contested catches/jump balls (favors height), goal-line/short-yardage power (favors mass), trench push (favors weight/strength combined) — rather than being woven into every formula.
 
-**Weight can change over a career** through development investment (a strength-and-conditioning track, tied to development points) — modeling real freshman weight-room gains, a coach intentionally bulking up a lineman, or slimming down a player as part of a position conversion (tying directly into §5.9 Familiarity). Height is fixed.
+**Weight can change over a career** through development investment (a strength-and-conditioning track, tied to development points) — modeling real freshman weight-room gains or a coach intentionally bulking up a lineman. Height is fixed.
 
 **Initial formula hypothesis for the situational play math** (§5.1) — an unvalidated starting point, not a locked number, per §5.12:
 
@@ -276,7 +268,7 @@ Recruiting (and the whole simulation) must work identically whether running on t
   - A **small, steady drip** during the season.
   - A **large bump** in the offseason.
 - The **position coach decides how to spend** those development points on their players (which attributes to improve). This is the actively-managed part of player development — you don't run practices, but you do direct growth.
-- Development points can also be spent on **Familiarity at a new position** (§5.9) and on a player's **weight** via a strength-and-conditioning track (§5.10) — covering position conversions and physical development, not just raw skill attributes.
+- Development points can also be spent on a player's **weight** via a strength-and-conditioning track (§5.10) — not just raw skill attributes.
 
 ### 7.1 Eligibility & roster movement
 
