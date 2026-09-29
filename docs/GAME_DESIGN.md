@@ -2,7 +2,7 @@
 
 **Status:** Living draft. This document reflects everything decided in planning conversations so far. Sections marked **TBD** are open and will be filled in as we keep talking. Nothing here is final until we've validated it feels good to build and play — but this is our source of truth for what we're building.
 
-**Last updated:** 2026-09-28
+**Last updated:** 2026-09-29
 
 ---
 
@@ -170,41 +170,48 @@ Every attribute is a **hidden 0-100 number** under the hood, displayed to the pl
 - Under-scouted recruit → a range shown (e.g. "B- to A-")
 - Fully scouted → the exact letter grade
 
-### 5.8 Position groups (not rigid per-position schemas)
+### 5.8 Positions & attribute buckets
 
-Rather than ~20 separate position-specific attribute schemas, players are modeled in **four broad groups**, each sharing one attribute set. This mirrors real recruiting/coaching practice (ATH designations, position "projections," in-career position changes) and deliberately **supports repositioning a player** during their career — something a rigid per-position schema couldn't do cleanly.
+Every player and recruit has a **real, specific, named position** — QB, RB, WR, TE, LT, LG, C, RG, RT, EDGE, DT, LB, CB, S, K, P. There is no generic "Athlete" or "Line" label anywhere in the player-facing game; position identity is always explicit (an earlier fully-merged-position design was tested with outside feedback and dropped for exactly this reason — real position names read better).
 
-| Group | Covers | Group-specific attributes |
+Underneath that player-facing identity, for math and UI simplicity, several real positions **share one attribute schema** rather than each of the ~15 positions having its own bespoke list. This grouping is purely an internal convenience — the player only ever sees "this is a Cornerback," never "this is a Defensive Skill player."
+
+Every player has exactly **4 universal attributes** (identical meaning regardless of position) plus **4 bucket-specific attributes** — 8 attributes total, always, for a clean and consistent player card across every position in the game.
+
+**Universal (4 visible + 1 hidden, every player):**
+- **Strength**, **Speed**, **Durability** (covers both injury risk and in-game fatigue/stamina — merged into one), **Awareness** — visible
+- **Potential** (hidden ceiling, never shown directly — only inferred from development rate)
+
+**Bucket-specific (4 per bucket):**
+
+| Bucket | Positions | Attributes |
 |---|---|---|
-| **Passer** | QB | Accuracy Short, Accuracy Medium, Accuracy Deep |
-| **Specialist** | K, P | Power, Accuracy, Clutch |
-| **Line** | OL, DL | Run Block, Pass Block, Pass Rush, Run Defense, Tackling |
-| **Athlete** | RB, WR, TE, LB, CB, S | Elusiveness, Break Tackle, Ball Security, Receiving, Route Running, Catching, Catch-in-Traffic, Release, Run Block, Run Defense, Man Coverage, Zone Coverage, Press, Ball Skills, Tackling, Pass Rush |
+| **Passer** | QB | Accuracy Short, Accuracy Medium, Accuracy Deep, Clutch |
+| **Specialist** | K, P | Power, Accuracy, Hang Time, Clutch |
+| **Offensive Skill** | RB, WR, TE | Hands *(catching + carrying, combined)*, Route Running, Break Tackling, Blocking |
+| **Offensive Line** | LT, LG, C, RG, RT | Run Blocking, Pass Blocking, Pulling, Discipline *(penalty proneness)* |
+| **Defensive Skill** | LB, CB, S | Coverage *(includes ball skills)*, Tackling, Run Defense, Pass Rush |
+| **Defensive Line** | EDGE, DT | Run Defense, Pass Rush, Tackling, Discipline *(penalty proneness)* |
 
 Long snapper is **not modeled as a distinct role/attribute** — snapping competence is abstracted away rather than tracked.
 
-Every player also carries **7 universal attributes**, regardless of group: **Speed, Strength, Agility, Awareness, Durability** (injury risk modifier), **Stamina** (in-game fatigue), and **Potential** (hidden ceiling, never shown directly — only inferred from development rate).
-
-Universal attributes deliberately absorb several traits that would otherwise be separate (per direct design decisions):
-- QB: no separate Arm Strength (covered by Strength), no Play-Action/Pocket Presence/Decision Making (covered by Awareness), no separate Scramble/Mobility (covered by Speed + Agility).
-- RB: no separate Vision (covered by Awareness).
-- WR/TE: no separate YAC (covered by Speed + Agility).
-
-**A player's full group-wide attribute set exists at all times**, but only the subset relevant to their **currently assigned position** is treated as "active" for play math and shown prominently in the UI — the rest are secondary/background (e.g., a starting WR's Man Coverage and Pass Rush grades exist but sit low and out of the spotlight until/unless he's ever moved to defense). **This "active attributes" presentation needs to be validated with an actual UI mockup before being treated as finalized** — noted as an open item, see §13.
+Universal attributes deliberately absorb several traits that would otherwise need their own slot (per direct design decisions): QB has no separate Arm Strength (covered by Strength), no Play-Action/Pocket Presence/Decision Making (covered by Awareness), no separate Scramble/Mobility (covered by Speed); RB has no separate Vision (covered by Awareness); WR/TE has no separate YAC (covered by Speed). Agility as a distinct attribute was considered and deliberately dropped — its effect is absorbed into the position-specific attributes that already imply it (Route Running, Break Tackling, Pulling, Coverage, etc.) rather than tracked separately.
 
 ### 5.9 Positional Familiarity
 
-Because Athlete- and Line-group attributes are fully portable across the real positions within their group, an unrestricted "move anyone anywhere instantly" mechanic would be unrealistic and exploitable (no one would ever value drafting a true CB if you could just freely reslot your best raw athlete). To prevent that:
+A player can be **repositioned within their bucket** (RB ↔ WR ↔ TE; LB ↔ CB ↔ S; or between the five Offensive Line spots) without any attribute conversion — positions sharing a bucket already use the exact same attributes, just at different values. To keep this from being a costless, exploitable "move anyone anywhere instantly" mechanic:
 
-- Every player has a **Familiarity** rating (0-100) **per real position** within their group — starts high at their recruited/assigned position, starts low or at zero for any position they've never played.
+- Every player has a **Familiarity** rating (0-100) **per real position within their bucket** — starts high at their recruited/assigned position, starts low or at zero for any position in the bucket they've never played.
 - Low Familiarity **suppresses effective attribute values in play math** (not the underlying grades) — e.g., a Safety just moved to Linebacker plays like a worse linebacker than his raw numbers alone would suggest, until Familiarity rises.
 - Familiarity **climbs through playing time at the new position**, and can be **accelerated by spending development points there** — modeling the real "he needs more reps at the new spot" reality of a position change.
 
-This makes repositioning a real, weighty coaching decision (worth it for a great athlete stuck behind a starter, or to fix a poor fit) rather than a free respec.
+**Cross-bucket conversions** (e.g. a WR converting to CB — offense to defense) are **not** a routine Familiarity move. They're supported, but as a rare, deliberate, narratively bigger event (an offseason coaching decision, not something available every week) — matching how genuinely uncommon that kind of conversion is in real college football, unlike same-bucket repositioning, which is common and treated as the standard mechanic above.
+
+This makes repositioning within a bucket a real, weighty-but-accessible coaching decision (worth it for a great athlete stuck behind a starter, or to fix a poor fit), while keeping full position changes across sides of the ball special rather than routine.
 
 ### 5.10 Physical profile (height & weight)
 
-Players have **realistic height and weight**, generated per their actual real-world position projection (e.g., a projected Linebacker generates in realistic LB size ranges, distinct from a projected Cornerback) even though both are in the shared Athlete group underneath.
+Players have **realistic height and weight**, generated per their actual real position (e.g., a Linebacker generates in realistic LB size ranges, distinct from a Cornerback, even though both share the Defensive Skill attribute bucket underneath).
 
 Height/weight are **not just flavor** — they matter in two ways:
 1. **Generation-time correlation**: body type realistically constrains which attributes a player tends to roll (a 340 lb lineman is very unlikely to also roll elite Speed).
@@ -222,9 +229,9 @@ Every situational factor (size included) is expressed as a signed offset added t
 
 For scale, a genuine talent mismatch in the underlying attributes might swing the differential ±40-60 — these caps are meant to keep size as a real, felt factor that tips close matchups without ever overriding a real skill gap on its own. **The specific coefficients and caps above are exactly what §5.12's calibration process exists to correct** — they should be expected to change once real simulated output can be compared against real statistical benchmarks.
 
-### 5.11 Recruiting position tags
+### 5.11 Position identity vs. attribute buckets
 
-Despite the shared-attribute-group model underneath, recruits and players still carry a **projected/assigned position tag** (e.g., "CB," not just "Athlete") for recruiting-board organization, depth-chart purposes, and to drive realistic height/weight generation (§5.10). The group model is an internal data/flexibility architecture — it does not remove the concept of "what position is this guy" from the player-facing experience.
+To state the relationship in §5.8 plainly: **real position (e.g., "Cornerback") is always the primary, player-facing identity** — used on the recruiting board, depth chart, roster screens, and everywhere else a player is shown. The **attribute bucket** (e.g., Defensive Skill) is a purely internal simplification for math and UI consistency and is **never shown to the player**. This also drives realistic height/weight generation (§5.10), which is keyed to the real position, not the bucket — a projected Cornerback and a projected Linebacker generate in different, position-appropriate size ranges despite sharing an attribute schema.
 
 ### 5.12 Statistical validation & calibration
 
@@ -389,7 +396,6 @@ Target: a typical week (recruiting actions + game sim + reports) should be playa
 These are known-open items, not forgotten — to be resolved in future planning sessions:
 
 - [ ] Price point for the one-time purchase (deliberately deferred to closer to launch).
-- [ ] **"Active attributes" UI presentation** (§5.8) needs an actual mockup/prototype before being treated as validated — user explicitly wants to see it in practice, not just approve it in the abstract.
 - [ ] The situational size-modifier coefficients (§5.10) have an initial hypothesis written down, but are explicitly expected to change once run through the statistical calibration harness (§5.12) against real engine output — not resolved until that empirical pass happens.
 - [ ] Exactly how weekly recruiting actions/interest (§6.2) mathematically feed into the 50/25/25 commitment-decision weights (§6.3) — e.g. whether accumulated interest is a threshold to make a recruit's shortlist at all, or a continuously blended factor. Directionally settled, precise formula still open.
 - [ ] Coach skill tree (§4.5) is intentionally incomplete — Scouting, Recruiting, Player Development, and Tactics are locked in; more categories may be added later.
